@@ -7,7 +7,7 @@
         <input type="email" name="email" autocomplete="off" v-model="email">
       </div>
       <div class="field">
-        <label for="email">Password:</label>
+        <label for="password">Password:</label>
         <input type="password" name="password" autocomplete="off" v-model="password">
       </div>
       <div class="field">
@@ -38,7 +38,7 @@ export default {
     slug: null
   }),
   methods: {
-    signup() {
+    async signup() {
       if (this.alias && this.email && this.password) {
         this.slug = slugify(this.alias, {
           replacement: '-',
@@ -46,42 +46,48 @@ export default {
           lower: true
         })
 
-        // let ref = await db.collection('users').doc(this.slug).get()
-        //
-        // if(ref.exists) {
-        //   this.feedback = 'This alias already exists'
-        // } else {
-        //   try  {
-        //     await firebase.auth().createUserWithEmailAndPassword(this.email, this.password)
-        //     this.feedback = 'This alias is free to use'
-        //   } catch (e) {
-        //     this.feedback = e.message
-        //   }
-        // }
+        let ref = await db.collection('users').doc(this.slug)
+        let refGet = await ref.get()
 
-
-        let ref = db.collection('users').doc(this.slug)
-        ref.get().then(doc => {
-          if (doc.exists) {
-            this.feedback = 'This alias already exists'
-          } else {
-            firebase.auth().createUserWithEmailAndPassword(this.email, this.password)
-            .then(cred => {
-              ref.set({
-                alias: this.alias,
-                geolocation: null,
-                user_id: cred.user.uid
-              })
-            }).then(() => {
-              this.$router.push({name: 'GMap'})
+        if(refGet.exists) {
+          this.feedback = 'This alias already exists'
+        } else {
+          try  {
+            let cred = await firebase.auth().createUserWithEmailAndPassword(this.email, this.password)
+            await ref.set({
+              alias: this.alias,
+              geolocation: null,
+              user_id: cred.user.uid
             })
-            .catch(err => {
-              this.feedback = err.message
-            })
-
             this.feedback = 'This alias is free to use'
+            await this.$router.push({name: 'GMap'})
+          } catch (e) {
+            this.feedback = e.message
           }
-        })
+        }
+
+        // let ref = db.collection('users').doc(this.slug)
+        // ref.get().then(doc => {
+        //   if (doc.exists) {
+        //     this.feedback = 'This alias already exists'
+        //   } else {
+        //     firebase.auth().createUserWithEmailAndPassword(this.email, this.password)
+        //     .then(cred => {
+        //       ref.set({
+        //         alias: this.alias,
+        //         geolocation: null,
+        //         user_id: cred.user.uid
+        //       })
+        //     }).then(() => {
+        //       this.$router.push({name: 'GMap'})
+        //     })
+        //     .catch(err => {
+        //       this.feedback = err.message
+        //     })
+        //
+        //     this.feedback = 'This alias is free to use'
+        //   }
+        // })
       } else {
         this.feedback = 'You must enter all fields'
       }
