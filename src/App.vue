@@ -14,6 +14,7 @@ export default {
 }
 </script>
 
-<style>
-
+<style lang="sass">
+body
+  background-color: #ddd
 </style>
